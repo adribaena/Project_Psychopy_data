@@ -1,100 +1,93 @@
 import random , csv, funcionesExtras, itertools
 from psychopy import gui,core, data, visual, event, logging
+
+
+#permitimos que se puedan cargar mensajes en el output cada vez que se guarde en un fichero
 logging.console.setLevel(logging.DEBUG)
 
+#importamos cabeceras y trials del fichero raiz condiciones
 headers=list(csv.reader(open('conditions.csv',"rU")))[0]
 trials=list(csv.reader(open('conditions.csv',"rU")))[1:]
 
-print headers
-print trials, 'sdasdsa'
-
-numConditions =  range(len(trials))
 
 
 conditions = data.importConditions('conditions.csv')
-print conditions    
+print 'condiciones' ,conditions    
 
 
+#preparamos el primer gui para introducir datos del sujeto, y el numero de trials 
 info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
 dialog = gui.DlgFromDict(dictionary= info, title='JFMR and ARB task')
 
 
 if dialog.OK:
-    infoUser = dialog.data #this will be a list of data returned from each field added in order
-    print(infoUser)
+    infoUser = dialog.data
+    #Guardamos los datos en infoUser, y tenemos los datos preparados para imprimirlos en cada file
 else:
     print('user cancelled')
     core.quit()
     
 
-#Guardamos los datos en infoUser, y tenemos 
-
-#print info['numberTrials']
+#guardamos la fecha de hoy en el cada trial
 
 info['dateStr'] = data.getDateStr()
 
-print 'la info es : ' , info
 
-#create a window
-mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color=(0, 0, 0),units='deg')
+
+#creamos la pantalla sobre la que vamos a usar nuestro programa
+#tambien preparamos el reloj interno para ir funcionando mientras se van 
+#cargando el resto de componentes
+
+mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg')
 respClock = core.Clock()
 
 
 
+# declaramos las tres formas para las celulas solares, de mas claro a mas oscuro
 
 solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.2 , size= 2, colorSpace='hsv', pos=[-18,9],sf=0)
 solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.6, size= 2 , colorSpace='hsv', pos=[-18,9],sf=0)
 solar_cell50 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,230,0), opacity= 0.8, size= 2 ,colorSpace='hsv', pos=[-18,9],sf=0)
 
 
+#preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
 solar_cellFixation = visual.Circle(mywin, radius=1, edges=30, lineColor = 'white',fillColor = 'white', pos=[-18,9], interpolate= True) 
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
 
 
-
+#preparamos las formas de la flecha , siendo un cuadrado seguido de un triangulo
 square1=[ [-0.2,0.05], [-0.2,-0.05], [0.0,-0.05],[0.0,0.05]]
 triangle1 = [[0.0,-0.1], [0.2,0], [0.0,0.1]]
 
 
+#preparamos la flecha para el 100 por 100 de aciertos, de color verde
 square100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor=[-0.5,0.5,-0.5], size=10, lineColor=[-0.5,0.5,-0.5])
 triangle100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor=[-0.5,0.5,-0.5], size=10, lineColor=[-0.5,0.5,-0.5])
 
+#preparamos la flecha para el 75 por 100 de aciertos, de color rojo
 square75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='red', size=10, lineColor='red')
 triangle75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='red', size=10, lineColor='red')
 
+#preparamos la flecha para el 50 por 100 de aciertos, de color azul
 square50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='blue', size=10, lineColor='blue')
 triangle50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='blue', size=10, lineColor='blue')
 
 
-
+#declaramos el resto de items, los circulos superiores de espera, y el rojo inferior
 leftWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'white',fillColor = 'white', pos=(-12, 7.5), interpolate=True)
 rightWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30,fillColor = 'white', pos=(12, 7.5), interpolate=True)
 downRedButton = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'red', fillColor = 'red', pos=(0, -6), interpolate=True)
 targetGreenCircle = visual.Circle(mywin, radius=1.5, edges=30,lineColor = 'green', fillColor = 'green', interpolate=True)
 
 
-
-
-
+#declaramos una sublista para pseudorandomizar los siguientes trials, y la iniciamos con 3 elementos aleatorios
 sublista = [random.choice(trials),random.choice(trials),random.choice(trials)]
 
 
-#info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
+#declaramos el nombre del fichero, siendo primero el sexo del sujeto, luego el id del mismo, y luego el numero de sesion
+filename = 'data/'+str(info['gender'])+'_'+str(info['Subject'])+'_'+str(info['Session'])
 
-
-
-
-clockTimer = core.Clock()
-
-gender = info['gender']
-sessionNum = info['Session']
-subjectName = info['Subject']
-
-print gender , ',,,' , sessionNum , ',,,,' , subjectName
-
-
-filename = 'data/'+str(gender)+'_'+str(sessionNum)+'_'+str(subjectName)
-
+# iniciamos nuestro experimento con un nombre, y las condiciones iniciales que hemos definido antes
 exp = data.ExperimentHandler(name='PosnerSubject',
                 version='0.1',
                 extraInfo=info,
@@ -105,19 +98,22 @@ exp = data.ExperimentHandler(name='PosnerSubject',
                 dataFileName=filename)
 
 
-
+#tomamos de la primera GUI el numero de trials, y lo usamos para nuestro manejador de los trials, que va a ser nuestro numero de repeticiones del bucle
 numeroReps = int(float(info['numberTrials']))
-
 training = data.TrialHandler(trialList=[], nReps=numeroReps, name='train', method='sequential')
+
+#unimos con nuestro experimento los trials, de manera secuencial (definido arriba en el method), en forma de bucle
 exp.addLoop(training)
 
 
-
+#para cada vez que hemos escrito en nuestro numero de trials
 for trial in training:
+    
+    #obtenemos la lista presudoaleatoria sin repetir 3 veces seguidas el mismo trigger
     sublista = funcionesExtras.siguienteValor(trials,sublista)
     
+    #de la lista anterior, nuestro elemento es el tercero de la lista.
     elem = sublista[2]
-    print elem
     
     rt = None
     
@@ -125,17 +121,16 @@ for trial in training:
     training.addData('elemento', elem)
     
     timeFixation = random.uniform(1,2)
-    c=round(timeFixation,1)
-    print 'soa' , c
+    soa=round(timeFixation,1)
+    print 'soa' , soa
     
-    training.addData('soa',c)
+    training.addData('soa',soa)
     
     fixationCross.draw()
     solar_cellFixation.draw()
     mywin.flip()
-    core.wait(c)
+    core.wait(soa)
     
-    mywin.color=(0, 0, 0)
     
     if (elem[0] == '100') :
         solar_cell100.draw()
@@ -251,6 +246,3 @@ for trial in training:
 for e in exp.entries:
     print(e)
 print("Done. We will save data to a csv file")
-
-
-

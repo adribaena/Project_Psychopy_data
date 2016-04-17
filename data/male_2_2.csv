@@ -1,0 +1,3 @@
+train.thisRepN,train.thisTrialN,train.thisN,train.thisIndex,elemento,soa,cueTime,imperativeTarget1,direccion,acierto,corrAns,imperativeTarget2,imperativeTarget2MS,respuesta,interstimulusInterval,numberTrials,gender,Session,dateStr,Subject,
+0,0,0,0,"['75', '0', 'NU']",1.8,1.5,0.5,0,1,2,0.989020972396,989.020972396,1,4.0,2,male,2,2016_abr_18_0143,2,
+1,0,1,0,"['100', '0', 'NU']",1.1,1.5,0.5,0,1,2,0.525937049562,525.937049562,0,4.0,2,male,2,2016_abr_18_0143,2,
