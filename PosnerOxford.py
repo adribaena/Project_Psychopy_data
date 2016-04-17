@@ -1,18 +1,18 @@
-import random 
-import csv 
-from psychopy import gui,core, data, visual, event
-import funcionesExtras
-import itertools
+import random , csv, funcionesExtras, itertools
+from psychopy import gui,core, data, visual, event, logging
+logging.console.setLevel(logging.DEBUG)
 
 headers=list(csv.reader(open('conditions.csv',"rU")))[0]
 trials=list(csv.reader(open('conditions.csv',"rU")))[1:]
 
 print headers
-print trials
+print trials, 'sdasdsa'
 
 numConditions =  range(len(trials))
 
 
+conditions = data.importConditions('conditions.csv')
+print conditions    
 
 
 info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
@@ -25,6 +25,7 @@ if dialog.OK:
 else:
     print('user cancelled')
     core.quit()
+    
 
 #Guardamos los datos en infoUser, y tenemos 
 
@@ -32,7 +33,7 @@ else:
 
 info['dateStr'] = data.getDateStr()
 
-print info['numberTrials'], info['dateStr']
+print 'la info es : ' , info
 
 #create a window
 mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color=(0, 0, 0),units='deg')
@@ -41,8 +42,8 @@ respClock = core.Clock()
 
 
 
-solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.6 , size= 2, colorSpace='hsv', pos=[-18,9],sf=0)
-solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.2, size= 2 , colorSpace='hsv', pos=[-18,9],sf=0)
+solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.2 , size= 2, colorSpace='hsv', pos=[-18,9],sf=0)
+solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.6, size= 2 , colorSpace='hsv', pos=[-18,9],sf=0)
 solar_cell50 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,230,0), opacity= 0.8, size= 2 ,colorSpace='hsv', pos=[-18,9],sf=0)
 
 
@@ -78,19 +79,56 @@ targetGreenCircle = visual.Circle(mywin, radius=1.5, edges=30,lineColor = 'green
 sublista = [random.choice(trials),random.choice(trials),random.choice(trials)]
 
 
+#info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
 
 
-for _ in itertools.repeat(None,info['numberTrials']  ):
-    
+
+
+clockTimer = core.Clock()
+
+gender = info['gender']
+sessionNum = info['Session']
+subjectName = info['Subject']
+
+print gender , ',,,' , sessionNum , ',,,,' , subjectName
+
+
+filename = 'data/'+str(gender)+'_'+str(sessionNum)+'_'+str(subjectName)
+
+exp = data.ExperimentHandler(name='PosnerSubject',
+                version='0.1',
+                extraInfo=info,
+                runtimeInfo=None,
+                originPath=None,
+                savePickle=True,
+                saveWideText=True,
+                dataFileName=filename)
+
+
+
+numeroReps = int(float(info['numberTrials']))
+
+training = data.TrialHandler(trialList=[], nReps=numeroReps, name='train', method='sequential')
+exp.addLoop(training)
+
+
+
+for trial in training:
     sublista = funcionesExtras.siguienteValor(trials,sublista)
     
     elem = sublista[2]
     print elem
     
+    rt = None
+    
+    
+    training.addData('elemento', elem)
+    
     timeFixation = random.uniform(1,2)
     c=round(timeFixation,1)
-    print c
+    print 'soa' , c
     
+    training.addData('soa',c)
     
     fixationCross.draw()
     solar_cellFixation.draw()
@@ -122,8 +160,11 @@ for _ in itertools.repeat(None,info['numberTrials']  ):
         triangle50.draw()
         
     mywin.flip()
-    core.wait(1.5)
     
+    cueTime = 1.5
+    core.wait(cueTime)
+    
+    training.addData('cueTime',cueTime)
     
     square50.ori = 0
     square75.ori = 0
@@ -138,12 +179,19 @@ for _ in itertools.repeat(None,info['numberTrials']  ):
     rightWhiteCircle.draw()
     downRedButton.draw()
     mywin.flip()
-    core.wait(0.5)
+    
+    imperativeTarget1 = 0.5
+    
+    core.wait(imperativeTarget1)
+    
+    training.addData('imperativeTarget1', imperativeTarget1)
     
     valor = elem[0]
     acierto = funcionesExtras.elementoPorPorcentaje(valor)
     
     direccion = elem[1]
+    
+    mywin.callOnFlip(respClock.reset)
     
     if (acierto and elem[1] == '0') or (acierto == 0 and elem[1] == '180') :
         targetGreenCircle.pos = ( 12, 7.5)
@@ -160,13 +208,22 @@ for _ in itertools.repeat(None,info['numberTrials']  ):
     mywin.flip()
     
     
-    print ' , direccion : ' , direccion , ' ,  acierto : ' , acierto , 'correct answer: ' , corrAns 
+    training.addData('direccion', direccion)
+    training.addData('acierto', acierto)
+    training.addData('corrAns', corrAns)
+    
+    
+    print ' , direccion : ' , direccion , ' ,  acierto : ' , acierto , 'correct_answer: ' , corrAns 
     
     
     event.clearEvents()
+    
+
+    respClock.reset
+    
     keys = event.waitKeys(keyList = ['left','right','escape'])
     resp = keys[0] 
-    rt = respClock.getTime()
+    imperativeTarget2 = respClock.getTime()
 
     if corrAns == 1  and resp=='left':
         corr = 1
@@ -176,13 +233,24 @@ for _ in itertools.repeat(None,info['numberTrials']  ):
         corr = None
         core.quit()
     else:
-        corr = 0
+        corr = 0    
     
-    
-    print 'respuesta : ' , corr
+    training.addData('imperativeTarget2',imperativeTarget2)
+    training.addData('imperativeTarget2MS',imperativeTarget2*1000)
+    training.addData('respuesta', corr)
     
     mywin.flip()
-    core.wait(4)
     
+    interstimulusInterval = 4.0
+    training.addData('interstimulusInterval',interstimulusInterval)
+    
+    core.wait(interstimulusInterval)
+    exp.nextEntry()
+    
+    
+for e in exp.entries:
+    print(e)
+print("Done. We will save data to a csv file")
+
 
 
