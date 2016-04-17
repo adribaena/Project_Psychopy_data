@@ -23,6 +23,6 @@
 
 missed 
 
-~~ - save data in file ~~
+~~save data in file~~
 - error in showing the first solar cell stimulus 
 - use joystick controller instead of keyboard 
