@@ -40,13 +40,13 @@ respClock = core.Clock()
 
 # declaramos las tres formas para las celulas solares, de mas claro a mas oscuro
 
-solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.2 , size= 2, colorSpace='hsv', pos=[-18,9],sf=0)
-solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.6, size= 2 , colorSpace='hsv', pos=[-18,9],sf=0)
-solar_cell50 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,230,0), opacity= 0.8, size= 2 ,colorSpace='hsv', pos=[-18,9],sf=0)
+solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.2 , size= 2, colorSpace='hsv', pos=[-14,7.5],sf=0)
+solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.6, size= 2 , colorSpace='hsv', pos=[-14,7.5],sf=0)
+solar_cell50 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,230,0), opacity= 0.8, size= 2 ,colorSpace='hsv', pos=[-14,7.5],sf=0)
 
 
 #preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
-solar_cellFixation = visual.Circle(mywin, radius=1, edges=30, lineColor = 'white',fillColor = 'white', pos=[-18,9], interpolate= True) 
+solar_cellFixation = visual.Circle(mywin, radius=1, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
 
 
@@ -69,9 +69,11 @@ triangle50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor
 
 
 #declaramos el resto de items, los circulos superiores de espera, y el rojo inferior
-leftWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'white',fillColor = 'white', pos=(-12, 7.5), interpolate=True)
-rightWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30,fillColor = 'white', pos=(12, 7.5), interpolate=True)
-downRedButton = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'red', fillColor = 'red', pos=(0, -6), interpolate=True)
+leftWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'white',fillColor = 'white', pos=(-9, 6), interpolate=True)
+rightWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30,fillColor = 'white', pos=(9, 6), interpolate=True)
+downRedButton = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'red', fillColor = 'red', pos=(0, -5), interpolate=True)
+
+# no le ponemos direccion, antes de pintarlo se la pondremos, pero eso es mas adelante
 targetGreenCircle = visual.Circle(mywin, radius=1.5, edges=30,lineColor = 'green', fillColor = 'green', interpolate=True)
 
 
@@ -208,7 +210,7 @@ for trial in training:
     if (acierto and elem[1] == '0') or (acierto == 0 and elem[1] == '180'):
         
         #dibujamos el circulo objetivo a la derecha, en la posicion que nos interese
-        targetGreenCircle.pos = ( 12, 7.5)
+        targetGreenCircle.pos = ( 9,6)
         
         #aprovechamos y dejamos dibujado el circulo blanco a la izquierda
         leftWhiteCircle.draw()
@@ -216,7 +218,7 @@ for trial in training:
         # declaramos un valor corrAns, que indica que el circulo target es a la derecha, con un 2
         corrAns = 2
     else :
-        targetGreenCircle.pos = (-12, 7.5)
+        targetGreenCircle.pos = (-9,6)
         
         #dejamos dibujado el ciruclo a la derecha
         rightWhiteCircle.draw()
