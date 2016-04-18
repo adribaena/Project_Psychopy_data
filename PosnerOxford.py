@@ -10,11 +10,6 @@ headers=list(csv.reader(open('conditions.csv',"rU")))[0]
 trials=list(csv.reader(open('conditions.csv',"rU")))[1:]
 
 
-
-conditions = data.importConditions('conditions.csv')
-print 'condiciones' ,conditions    
-
-
 #preparamos el primer gui para introducir datos del sujeto, y el numero de trials 
 info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
 dialog = gui.DlgFromDict(dictionary= info, title='JFMR and ARB task')
@@ -115,30 +110,40 @@ for trial in training:
     #de la lista anterior, nuestro elemento es el tercero de la lista.
     elem = sublista[2]
     
-    rt = None
+
     
-    
+    # colocamos el trial en nuestro csv, para que podamos ver que se cumple la pseudorandomizacion
     training.addData('elemento', elem)
     
+    #declaramos el SOA, un intervalo de tiempo entre 1 y 2 segundos que usaremos para la pantalla de fixation
     timeFixation = random.uniform(1,2)
-    soa=round(timeFixation,1)
-    print 'soa' , soa
     
+    # redondeamos el SOA a un solo decimal, y colocamos el valor en el fichero de salida
+    soa=round(timeFixation,1)
     training.addData('soa',soa)
     
+    #dibujamos la cruz de fijacion, y la celula solar de fijacion
     fixationCross.draw()
     solar_cellFixation.draw()
+    #hacemos que se recargue la pantalla mywin, con los elementos dibujados antes (se refresca la pantalla con esos elementos)
     mywin.flip()
+    
+    #esperamos para cerrar esa ventan un tiempo igual al SOA ( 1- 2 segs)
     core.wait(soa)
     
-    
+    #preguntamos por si queremos una celula de 100 por 100 de acierto, que se encuentra en nuestra variable elem, en el primer parametro 
     if (elem[0] == '100') :
+        #dibujamos la celula de 100 por 100 
         solar_cell100.draw()
+        #ademas, si el segundo elemento de elem (posicion 1 de elem, ya que la 0 representaba el procentaje de acierto) es 180
         if (elem[1] == '180'):
+            # si lo es, giramos la flecha (cuadrado y triangulo del elemento del color que nos interesa) un total de 180 grados para darle la vuelta
             square100.ori = int(float('180'))
             triangle100.ori = int(float('180'))
+        # hay que fijarse en los saltos de linea de arriba, es decir, giremos o no la figura, vamos a pintarla igualmente en nuestra ventana
         square100.draw()
         triangle100.draw()
+    #hacemos lo mismo para 75 y 50 por ciento
     elif (elem[0] == '75') :
         solar_cell75.draw()
         if (elem[1] == '180'):
@@ -153,14 +158,17 @@ for trial in training:
             triangle50.ori = int(float('180'))
         square50.draw()
         triangle50.draw()
-        
+    
+    #una vez dibujados los elementos, actualizamos la pantalla
     mywin.flip()
     
+    #declaramos y usamos una variable igual al tiempo de espera de esta ventana de CUE, en nuestro caso 1 segundo y medio
     cueTime = 1.5
     core.wait(cueTime)
-    
     training.addData('cueTime',cueTime)
     
+    # una vez que ha pasado el tiempo de cue, reseteamos la posicion de las cue, y lo hacemos poniendo la inclinacion de todas a 0 grados
+    # asi nos aseguramos que para el siguiente trial, todas las flechas estan orientadas como inicio a la derecha
     square50.ori = 0
     square75.ori = 0
     square100.ori = 0
@@ -169,80 +177,121 @@ for trial in training:
     triangle75.ori = 0
     
     
+    # ahora dibujamos el imperative target 1, es decir, el circulo rojo inferior, y los dos blancos superiores, al igual que una celula solar de un solo tipo
+    # vamos a reutilizar la de la celula solar del punto de fijacion
     solar_cellFixation.draw()
     leftWhiteCircle.draw()
     rightWhiteCircle.draw()
     downRedButton.draw()
     mywin.flip()
     
+    # como nuestro target dura un total de medio segundo, declaramos la variable, y la usamos como espera, para luego guardar ese valor en nuestro fichero de salida
     imperativeTarget1 = 0.5
-    
     core.wait(imperativeTarget1)
-    
     training.addData('imperativeTarget1', imperativeTarget1)
     
+    # vamos a obtener el porcentaje de acierto del cue, que es el primer elemento de elem
     valor = elem[0]
+    
+    # usaremos ese elemento para obtener un 1 o un 0 dependiendo de la tasa de acierto de nuestro elemento.
+    # para ello usaremos la funcion extra que se encuentra en el fichero funcionesExtras
     acierto = funcionesExtras.elementoPorPorcentaje(valor)
     
+    # guardamos un 0 o un 180, que indica los grados de giro del cueTime
     direccion = elem[1]
     
+    # vamos a ir actualizando el reloj interno cada vez que hagamos un flip (cargar la pantalla) de nuestra ventana. Vamos a resetear el reloj interno cada vez.
     mywin.callOnFlip(respClock.reset)
     
-    if (acierto and elem[1] == '0') or (acierto == 0 and elem[1] == '180') :
+    # si la flecha ha acertado, y marcaba la direccion de la derecha con 0 grados
+    # o si la flecha a mentido, y marcaba la direccion de la izquierda con 180 grados
+    if (acierto and elem[1] == '0') or (acierto == 0 and elem[1] == '180'):
+        
+        #dibujamos el circulo objetivo a la derecha, en la posicion que nos interese
         targetGreenCircle.pos = ( 12, 7.5)
+        
+        #aprovechamos y dejamos dibujado el circulo blanco a la izquierda
         leftWhiteCircle.draw()
+        
+        # declaramos un valor corrAns, que indica que el circulo target es a la derecha, con un 2
         corrAns = 2
     else :
         targetGreenCircle.pos = (-12, 7.5)
-        rightWhiteCircle.draw()
-        corrAns = 1
         
+        #dejamos dibujado el ciruclo a la derecha
+        rightWhiteCircle.draw()
+        
+        # en caso contrario, se pinta a la izquierda y corrAns vale 1
+        corrAns = 1
+    
+    # dibujamos nuestro circulo objetivo, y el resto de elementos que nos interesan para nuestro imperative target 2
     targetGreenCircle.draw()
     downRedButton.draw()
     solar_cellFixation.draw()
     mywin.flip()
     
     
-    training.addData('direccion', direccion)
-    training.addData('acierto', acierto)
-    training.addData('corrAns', corrAns)
+    # vamos a colocar las variables que hemos declarado anteriormente en nuestro fichero
+    training.addData('direccion', direccion) # guardamos el valor 0 o 180 dependiendo de nuestro elem
+    training.addData('acierto', acierto) # guardamos un 0 o un 1, dependiendo si se ha predecido con acierto o no el cue
+    training.addData('corrAns', corrAns) # guardamos un 1 si el circulo target esta a la izquierda, y un 2 si el green target esta a la derecha
     
     
-    print ' , direccion : ' , direccion , ' ,  acierto : ' , acierto , 'correct_answer: ' , corrAns 
     
-    
+    # borramos los eventos de teclado, que para futuros bucles nos interesa borrar las teclas pulsadas anteriormente
     event.clearEvents()
     
-
+    #reseteamos la variable del reloj interno para poder guardar lo que se tarde en pulsar la tecla target
     respClock.reset
     
+    
+    # AQUI TENDRIA QUE IR EL CODIGO PARA EL JOYSTICK
+    
+    
+    
+    # declaramos una lista de posibles teclas del teclado, izquierda, derecha y la tecla escape
     keys = event.waitKeys(keyList = ['left','right','escape'])
+    
+    #nos quedamos con la primera tecla pulsada
     resp = keys[0] 
+    
+    # guardamos el tiempo en pulsar esa tecla, que como hemos reseteado anteriormente el reloj, es el tiempo de respuesta del sujeto, en segundos
     imperativeTarget2 = respClock.getTime()
-
+    
+    # si el target correcto estaba a la izquierda, y se pulsa la tecla izquierda, hemos acertado
     if corrAns == 1  and resp=='left':
         corr = 1
     elif corrAns == 2  and resp=='right':
+    # si el target correcto estaba a la derecha, y hemos presionado la tecla derecha, hemos acertado igualmente
         corr = 1
+    # en el caso de pulsar la tecla escape, abortamos el experimento
     elif resp=='escape':
         corr = None
         core.quit()
     else:
+        #en cualquier caso contrario, no hemos acertado
         corr = 0    
     
-    training.addData('imperativeTarget2',imperativeTarget2)
-    training.addData('imperativeTarget2MS',imperativeTarget2*1000)
-    training.addData('respuesta', corr)
+    # guardamos los resultados en el fichero
+    training.addData('imperativeTarget2',imperativeTarget2) # el tiempo que hemos tardado en pulsar la tecla del teclado
+    training.addData('imperativeTarget2MS',imperativeTarget2*1000) # el tiempo de arriba, pero en milisegundos
+    training.addData('respuesta', corr) # el valor 1 si hemos acertado, o 0 si no hemos acertado
     
+    
+    # hacemos un flip despues de otro flip sin dibujar nada, por lo que se muestra una pantalla en negro
     mywin.flip()
     
+    # declaramos el tiempo de interstimulo antes de pasar al siguiente trial
     interstimulusInterval = 4.0
     training.addData('interstimulusInterval',interstimulusInterval)
     
+    # esperamos ese tiempo interstimulus y pasamos al siguiente trial
     core.wait(interstimulusInterval)
     exp.nextEntry()
-    
-    
+
+# una vez terminado, imprimimos por la pantalla del psychopy nuestras variables de salida
 for e in exp.entries:
     print(e)
+    
+# por ultimo, mostramos un mensaje de que todo ha ido bien
 print("Done. We will save data to a csv file")
