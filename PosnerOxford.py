@@ -1,5 +1,5 @@
 import random , csv, funcionesExtras, itertools
-from psychopy import gui,core, data, visual, event, logging
+from psychopy import gui,core, data, visual, event, logging, prefs
 
 
 #permitimos que se puedan cargar mensajes en el output cada vez que se guarde en un fichero
@@ -33,20 +33,20 @@ info['dateStr'] = data.getDateStr()
 #tambien preparamos el reloj interno para ir funcionando mientras se van 
 #cargando el resto de componentes
 
-mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg')
+mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg', allowGUI = False)
 respClock = core.Clock()
 
 
 
 # declaramos las tres formas para las celulas solares, de mas claro a mas oscuro
 
-solar_cell100 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color='white', opacity=0.2 , size= 2, colorSpace='hsv', pos=[-14,7.5],sf=0)
-solar_cell75 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,200,0), opacity= 0.6, size= 2 , colorSpace='hsv', pos=[-14,7.5],sf=0)
-solar_cell50 = visual.GratingStim(mywin,tex='sin', mask='raisedCos',color=(0,230,0), opacity= 0.8, size= 2 ,colorSpace='hsv', pos=[-14,7.5],sf=0)
+solar_cell100 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
+solar_cell75 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
+solar_cell50 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
 
 
 #preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
-solar_cellFixation = visual.Circle(mywin, radius=1, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
+solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
 
 
@@ -56,25 +56,25 @@ triangle1 = [[0.0,-0.1], [0.2,0], [0.0,0.1]]
 
 
 #preparamos la flecha para el 100 por 100 de aciertos, de color verde
-square100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor=[-0.5,0.5,-0.5], size=10, lineColor=[-0.5,0.5,-0.5])
-triangle100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor=[-0.5,0.5,-0.5], size=10, lineColor=[-0.5,0.5,-0.5])
+square100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor=[-0.5,0.5,-0.5], size=6, lineColor=[-0.5,0.5,-0.5])
+triangle100 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor=[-0.5,0.5,-0.5], size=6, lineColor=[-0.5,0.5,-0.5])
 
 #preparamos la flecha para el 75 por 100 de aciertos, de color rojo
-square75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='red', size=10, lineColor='red')
-triangle75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='red', size=10, lineColor='red')
+square75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='red', size=6, lineColor='red')
+triangle75 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='red', size=6, lineColor='red')
 
 #preparamos la flecha para el 50 por 100 de aciertos, de color azul
-square50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='blue', size=10, lineColor='blue')
-triangle50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='blue', size=10, lineColor='blue')
+square50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=square1, fillColor='blue', size=6, lineColor='blue')
+triangle50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor='blue', size=6, lineColor='blue')
 
 
 #declaramos el resto de items, los circulos superiores de espera, y el rojo inferior
-leftWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'white',fillColor = 'white', pos=(-9, 6), interpolate=True)
-rightWhiteCircle = visual.Circle(mywin, radius=1.5, edges=30,fillColor = 'white', pos=(9, 6), interpolate=True)
-downRedButton = visual.Circle(mywin, radius=1.5, edges=30, lineColor = 'red', fillColor = 'red', pos=(0, -5), interpolate=True)
+leftWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30, lineColor = 'white',fillColor = 'white', pos=(-9, 6), interpolate=True)
+rightWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30,fillColor = 'white', pos=(9, 6), interpolate=True)
+downRedButton = visual.Circle(mywin, radius=1.0, edges=30, lineColor = 'orange', fillColor = 'orange', pos=(0, -5), interpolate=True)
 
 # no le ponemos direccion, antes de pintarlo se la pondremos, pero eso es mas adelante
-targetGreenCircle = visual.Circle(mywin, radius=1.5, edges=30,lineColor = 'green', fillColor = 'green', interpolate=True)
+targetGreenCircle = visual.Circle(mywin, radius=1.0, edges=30,lineColor = 'orange', fillColor = 'orange', interpolate=True)
 
 
 #declaramos una sublista para pseudorandomizar los siguientes trials, y la iniciamos con 3 elementos aleatorios
@@ -127,6 +127,7 @@ for trial in training:
     #dibujamos la cruz de fijacion, y la celula solar de fijacion
     fixationCross.draw()
     solar_cellFixation.draw()
+    fixationCross.draw()
     #hacemos que se recargue la pantalla mywin, con los elementos dibujados antes (se refresca la pantalla con esos elementos)
     mywin.flip()
     
@@ -166,6 +167,8 @@ for trial in training:
     
     #declaramos y usamos una variable igual al tiempo de espera de esta ventana de CUE, en nuestro caso 1 segundo y medio
     cueTime = 1.5
+    #cueTime = 2
+    
     core.wait(cueTime)
     training.addData('cueTime',cueTime)
     
