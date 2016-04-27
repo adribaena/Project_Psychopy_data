@@ -11,18 +11,15 @@
 
 
 
-~~Version 1.1~~ 
+~~Version 1.2~~ 
 
 
 
-> Version 1.2
+> Version 1.3
 
-+ save data in file ( data folder)
 + read conditions from file
 + generate pseudorandom trials
 
 missed 
 
-~~save data in file~~
-- error in showing the first solar cell stimulus 
-- use joystick controller instead of keyboard 
+- change stop condition
