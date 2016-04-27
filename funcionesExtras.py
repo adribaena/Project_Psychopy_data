@@ -13,7 +13,7 @@ def siguienteValor(lista, voyPor):     # dada la lista de TODOS LOS STIM, Y UNA 
                 heTerminado = 1
                 return voyPor
             
-
+ 
 def elementoPorPorcentaje (item):
     if item == '100':
         lista = [1,1,1,1]
