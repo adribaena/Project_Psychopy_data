@@ -45,7 +45,7 @@ if nJoysticks>0:
     joy = joystick.Joystick(0)
 else:
     print("You don't have a joystick connected!?")
-    myWin.close()
+    mywin.close()
     core.quit()
 
 
@@ -266,14 +266,37 @@ for trial in training:
     lim = 0
     finbucle = 0
 
+    # declaramos los limites de pantalla
+    
+    limHoriz = 13
+    limVert = 8
+    
+    # fin declarar limites
+
+
+
+
     while finbucle == 0:
         xx = joy.getX()
         yy = joy.getY()
         [left,right] = downRedButton.pos
         
-        acel = 0.1  #aceleracion que se aplica a cada recogida de datos
+        acel = 0.4  #aceleracion que se aplica a cada recogida de datos
         nuevoX = left + acel* xx  # si avanzamos a la derecha, se incrementa el vector direccion X
         nuevoY = right - acel* yy # el eje Y esta invertido en los joystick, si vamos hacia arriba, se decrementa el vector direccion Y
+        
+        
+        
+        ## comprobamos los limites de pantalla
+        
+        nuevoX =  limHoriz  if (nuevoX > limHoriz ) else nuevoX
+        nuevoX =  -limHoriz  if (nuevoX < -limHoriz ) else nuevoX
+        nuevoY =  limVert  if (nuevoY > limVert ) else nuevoY
+        nuevoY =  -limVert  if (nuevoY < -limVert ) else nuevoY
+        
+        
+        ## fin comprobar limites 
+
 
         downRedButton.setPos((nuevoX, nuevoY))
 
@@ -281,15 +304,19 @@ for trial in training:
         distancia = distance.euclidean(downRedButton.pos,targetGreenCircle.pos)
         
         
-        if distancia < 2 :
+        if distancia < 2 :   # mientras estamos teniendo contacto con los dos circulos
             
             lim = lim+1
-        if distancia > 2 :
+        if distancia > 2 : #si dejan de estar en contacto los circulos, reseteamos el limite
             lim = 0
-        if lim > 50:   # criterio de parada temporal
-            finbucle = 1
-        if 'q' in event.getKeys():   # abortar operacion
+            
+        if lim > 50:   # criterio de parada temporal (50 es un ejemplo, serian 50 veces el bucle seguidas) 
+            finbucle = 1  # salimos del while
+            
+        if 'q' in event.getKeys():   # abortar operacion si pulsamos el dulce q
             core.quit()
+        
+        # si no pasa nada de eso
         
         leftWhiteCircle.draw()
         rightWhiteCircle.draw()
