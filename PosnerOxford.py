@@ -1,5 +1,7 @@
 import random , csv, funcionesExtras, itertools
 from psychopy import gui,core, data, visual, event, logging, prefs
+from psychopy.hardware import joystick
+from scipy.spatial import distance
 
 
 #permitimos que se puedan cargar mensajes en el output cada vez que se guarde en un fichero
@@ -35,6 +37,18 @@ info['dateStr'] = data.getDateStr()
 
 mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg', allowGUI = False)
 respClock = core.Clock()
+
+
+nJoysticks=joystick.getNumJoysticks()
+
+if nJoysticks>0:
+    joy = joystick.Joystick(0)
+else:
+    print("You don't have a joystick connected!?")
+    myWin.close()
+    core.quit()
+
+
 
 
 
@@ -230,10 +244,6 @@ for trial in training:
         corrAns = 1
     
     # dibujamos nuestro circulo objetivo, y el resto de elementos que nos interesan para nuestro imperative target 2
-    targetGreenCircle.draw()
-    downRedButton.draw()
-    solar_cellFixation.draw()
-    mywin.flip()
     
     
     # vamos a colocar las variables que hemos declarado anteriormente en nuestro fichero
@@ -244,7 +254,7 @@ for trial in training:
     
     
     # borramos los eventos de teclado, que para futuros bucles nos interesa borrar las teclas pulsadas anteriormente
-    event.clearEvents()
+    
     
     #reseteamos la variable del reloj interno para poder guardar lo que se tarde en pulsar la tecla target
     respClock.reset
@@ -253,35 +263,50 @@ for trial in training:
     # AQUI TENDRIA QUE IR EL CODIGO PARA EL JOYSTICK
     
     
-    
-    # declaramos una lista de posibles teclas del teclado, izquierda, derecha y la tecla escape
-    keys = event.waitKeys(keyList = ['left','right','escape'])
-    
-    #nos quedamos con la primera tecla pulsada
-    resp = keys[0] 
-    
+    lim = 0
+    finbucle = 0
+
+    while finbucle == 0:
+        xx = joy.getX()
+        yy = joy.getY()
+        [left,right] = downRedButton.pos
+        
+        acel = 0.1  #aceleracion que se aplica a cada recogida de datos
+        nuevoX = left + acel* xx  # si avanzamos a la derecha, se incrementa el vector direccion X
+        nuevoY = right - acel* yy # el eje Y esta invertido en los joystick, si vamos hacia arriba, se decrementa el vector direccion Y
+
+        downRedButton.setPos((nuevoX, nuevoY))
+
+        
+        distancia = distance.euclidean(downRedButton.pos,targetGreenCircle.pos)
+        
+        
+        if distancia < 2 :
+            
+            lim = lim+1
+        if distancia > 2 :
+            lim = 0
+        if lim > 50:   # criterio de parada temporal
+            finbucle = 1
+        if 'q' in event.getKeys():   # abortar operacion
+            core.quit()
+        
+        leftWhiteCircle.draw()
+        rightWhiteCircle.draw()
+        targetGreenCircle.draw() #aqui el orden importa y primero imprimimos los dos circulos blancos, y luego el objetivo
+        downRedButton.draw()
+        solar_cellFixation.draw()
+        event.clearEvents()
+        mywin.flip()
+        
+        
+    downRedButton.setPos((0, -5))
     # guardamos el tiempo en pulsar esa tecla, que como hemos reseteado anteriormente el reloj, es el tiempo de respuesta del sujeto, en segundos
     imperativeTarget2 = respClock.getTime()
     
-    # si el target correcto estaba a la izquierda, y se pulsa la tecla izquierda, hemos acertado
-    if corrAns == 1  and resp=='left':
-        corr = 1
-    elif corrAns == 2  and resp=='right':
-    # si el target correcto estaba a la derecha, y hemos presionado la tecla derecha, hemos acertado igualmente
-        corr = 1
-    # en el caso de pulsar la tecla escape, abortamos el experimento
-    elif resp=='escape':
-        corr = None
-        core.quit()
-    else:
-        #en cualquier caso contrario, no hemos acertado
-        corr = 0    
-    
     # guardamos los resultados en el fichero
     training.addData('imperativeTarget2',imperativeTarget2) # el tiempo que hemos tardado en pulsar la tecla del teclado
-    training.addData('imperativeTarget2MS',imperativeTarget2*1000) # el tiempo de arriba, pero en milisegundos
-    training.addData('respuesta', corr) # el valor 1 si hemos acertado, o 0 si no hemos acertado
-    
+    training.addData('imperativeTarget2MS',imperativeTarget2*1000) # el tiempo de arriba, pero en milisegundos    
     
     # hacemos un flip despues de otro flip sin dibujar nada, por lo que se muestra una pantalla en negro
     mywin.flip()
