@@ -281,7 +281,7 @@ for trial in training:
         yy = joy.getY()
         [left,right] = downRedButton.pos
         
-        acel = 0.4  #aceleracion que se aplica a cada recogida de datos
+        acel = 0.5 #aceleracion que se aplica a cada recogida de datos
         nuevoX = left + acel* xx  # si avanzamos a la derecha, se incrementa el vector direccion X
         nuevoY = right - acel* yy # el eje Y esta invertido en los joystick, si vamos hacia arriba, se decrementa el vector direccion Y
         
