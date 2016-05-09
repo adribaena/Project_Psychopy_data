@@ -1,44 +1,57 @@
+from __future__ import division
 import random , csv, funcionesExtras, itertools
 from psychopy import gui,core, data, visual, event, logging, prefs
 from psychopy.hardware import joystick
 from scipy.spatial import distance
+from labjack import u3
 
 
-#permitimos que se puedan cargar mensajes en el output cada vez que se guarde en un fichero
+
+miu3 = u3.U3()
+miu3.getCalibrationData
+
+DAC1_REGISTER = 5002
+miu3.writeRegister(DAC1_REGISTER,0)
+
+tiempoEsperaU3Cue = 50
+
+
+
+#Allows to display messsages in the output when a file is saved
 logging.console.setLevel(logging.DEBUG)
 
-#importamos cabeceras y trials del fichero raiz condiciones
+#Headers and trial are imported from the file conditions
 headers=list(csv.reader(open('conditions.csv',"rU")))[0]
 trials=list(csv.reader(open('conditions.csv',"rU")))[1:]
 
 
-#preparamos el primer gui para introducir datos del sujeto, y el numero de trials 
+#First GUI is ready to get subject's data and desired number of trials
 info = {'Session': 1, 'Subject':'', 'gender':['male','female'], 'numberTrials' : 12 }
-dialog = gui.DlgFromDict(dictionary= info, title='JFMR and ARB task')
+dialog = gui.DlgFromDict(dictionary= info, title='Posner with Joystick')
 
 
 if dialog.OK:
     infoUser = dialog.data
-    #Guardamos los datos en infoUser, y tenemos los datos preparados para imprimirlos en cada file
+    #Subject's data is saved in infoUser and are ready to print them on each file
 else:
     print('user cancelled')
     core.quit()
     
 
-#guardamos la fecha de hoy en el cada trial
+#Date is saved on each trial
 
 info['dateStr'] = data.getDateStr()
 
 
 
-#creamos la pantalla sobre la que vamos a usar nuestro programa
-#tambien preparamos el reloj interno para ir funcionando mientras se van 
-#cargando el resto de componentes
+#We create a screen on which our program will run
+#We also set up the internal clock meanwhile the remaining functions are ready to use
 
 mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg', allowGUI = False)
 respClock = core.Clock()
 
 
+joystick.backend='pyglet'
 nJoysticks=joystick.getNumJoysticks()
 
 if nJoysticks>0:
@@ -52,15 +65,14 @@ else:
 
 
 
-# declaramos las tres formas para las celulas solares, de mas claro a mas oscuro
+# We declare the 2 types of stimuli to be detected with the solar panels declaramos las 2 formas para las celulas solares, de mas claro a mas oscuro
 
-solar_cell100 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
-solar_cell75 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
-solar_cell50 = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True)
-
+solar_cellcue = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
+solar_celltarget = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 0.5, pos=[-14,7.5], interpolate= True)
 
 #preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
-solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
+#solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
+
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
 
 
@@ -83,12 +95,12 @@ triangle50 = visual.ShapeStim(mywin, lineWidth=2.0,vertices=triangle1, fillColor
 
 
 #declaramos el resto de items, los circulos superiores de espera, y el rojo inferior
-leftWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30, lineColor = 'white',fillColor = 'white', pos=(-9, 6), interpolate=True)
-rightWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30,fillColor = 'white', pos=(9, 6), interpolate=True)
-downRedButton = visual.Circle(mywin, radius=1.0, edges=30, lineColor = 'orange', fillColor = 'orange', pos=(0, -5), interpolate=True)
+leftWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30, lineColor = 'white',fillColor = 'white', pos=(-6, 3), interpolate=True)
+rightWhiteCircle = visual.Circle(mywin, radius=1.0, edges=30,fillColor = 'white', pos=(6, 3), interpolate=True)
+downOrangeButton = visual.Circle(mywin, radius=0.7, edges=30, lineColor = 'orange', fillColor = 'orange', pos=(0, -5), interpolate=True)
 
 # no le ponemos direccion, antes de pintarlo se la pondremos, pero eso es mas adelante
-targetGreenCircle = visual.Circle(mywin, radius=1.0, edges=30,lineColor = 'orange', fillColor = 'orange', interpolate=True)
+targetGreyCircle = visual.Circle(mywin, radius=1.0, edges=30,lineColor = 'grey', fillColor = 'grey', interpolate=True)
 
 
 #declaramos una sublista para pseudorandomizar los siguientes trials, y la iniciamos con 3 elementos aleatorios
@@ -126,10 +138,32 @@ for trial in training:
     #de la lista anterior, nuestro elemento es el tercero de la lista.
     elem = sublista[2]
     
-
     
     # colocamos el trial en nuestro csv, para que podamos ver que se cumple la pseudorandomizacion
     training.addData('elemento', elem)
+    
+    
+    
+    
+    
+    
+    ttlText = elem[2]
+    
+    ttlNumber = float(ttlText.strip('"'))
+    
+    #obtenemos el voltaje a mandar
+        
+    timeWait = tiempoEsperaU3Cue
+    
+    while timeWait > 0 :
+        miu3.writeRegister(DAC1_REGISTER, ttlNumber)
+        timeWait = timeWait
+    # vamos escribiendo el voltaje en el puerto dac1
+    
+    miu3.writeRegister(DAC1_REGISTER, 0)
+    
+    #escribimos en el mismo puerto un 0
+    
     
     #declaramos el SOA, un intervalo de tiempo entre 1 y 2 segundos que usaremos para la pantalla de fixation
     timeFixation = random.uniform(1,2)
@@ -140,7 +174,7 @@ for trial in training:
     
     #dibujamos la cruz de fijacion, y la celula solar de fijacion
     fixationCross.draw()
-    solar_cellFixation.draw()
+    #solar_cellFixation.draw()
     fixationCross.draw()
     #hacemos que se recargue la pantalla mywin, con los elementos dibujados antes (se refresca la pantalla con esos elementos)
     mywin.flip()
@@ -148,10 +182,16 @@ for trial in training:
     #esperamos para cerrar esa ventan un tiempo igual al SOA ( 1- 2 segs)
     core.wait(soa)
     
+    #Pintamos las solar cell para la cue (aprox 0.5V)
+    solar_cellcue.draw()
+    
+
+
+    
     #preguntamos por si queremos una celula de 100 por 100 de acierto, que se encuentra en nuestra variable elem, en el primer parametro 
     if (elem[0] == '100') :
         #dibujamos la celula de 100 por 100 
-        solar_cell100.draw()
+        #solar_cell100.draw()
         #ademas, si el segundo elemento de elem (posicion 1 de elem, ya que la 0 representaba el procentaje de acierto) es 180
         if (elem[1] == '180'):
             # si lo es, giramos la flecha (cuadrado y triangulo del elemento del color que nos interesa) un total de 180 grados para darle la vuelta
@@ -162,14 +202,14 @@ for trial in training:
         triangle100.draw()
     #hacemos lo mismo para 75 y 50 por ciento
     elif (elem[0] == '75') :
-        solar_cell75.draw()
+        #solar_cell75.draw()
         if (elem[1] == '180'):
             square75.ori = int(float('180'))
             triangle75.ori = int(float('180'))
         square75.draw()
         triangle75.draw()
     elif (elem[0] == '50'):
-        solar_cell50.draw()
+        #solar_cell50.draw()
         if (elem[1] == '180'):
             square50.ori = int(float('180'))
             triangle50.ori = int(float('180'))
@@ -179,9 +219,8 @@ for trial in training:
     #una vez dibujados los elementos, actualizamos la pantalla
     mywin.flip()
     
-    #declaramos y usamos una variable igual al tiempo de espera de esta ventana de CUE, en nuestro caso 1 segundo y medio
+    #declaramos y usamos una variable igual al tiempo de espera de esta ventana de CUE
     cueTime = 1.5
-    #cueTime = 2
     
     core.wait(cueTime)
     training.addData('cueTime',cueTime)
@@ -198,10 +237,11 @@ for trial in training:
     
     # ahora dibujamos el imperative target 1, es decir, el circulo rojo inferior, y los dos blancos superiores, al igual que una celula solar de un solo tipo
     # vamos a reutilizar la de la celula solar del punto de fijacion
-    solar_cellFixation.draw()
+    #solar_cellFixation.draw()
+
     leftWhiteCircle.draw()
     rightWhiteCircle.draw()
-    downRedButton.draw()
+    downOrangeButton.draw()
     mywin.flip()
     
     # como nuestro target dura un total de medio segundo, declaramos la variable, y la usamos como espera, para luego guardar ese valor en nuestro fichero de salida
@@ -227,7 +267,7 @@ for trial in training:
     if (acierto and elem[1] == '0') or (acierto == 0 and elem[1] == '180'):
         
         #dibujamos el circulo objetivo a la derecha, en la posicion que nos interese
-        targetGreenCircle.pos = ( 9,6)
+        targetGreyCircle.pos = ( 6,3)
         
         #aprovechamos y dejamos dibujado el circulo blanco a la izquierda
         leftWhiteCircle.draw()
@@ -235,7 +275,7 @@ for trial in training:
         # declaramos un valor corrAns, que indica que el circulo target es a la derecha, con un 2
         corrAns = 2
     else :
-        targetGreenCircle.pos = (-9,6)
+        targetGreyCircle.pos = (-6,3)
         
         #dejamos dibujado el ciruclo a la derecha
         rightWhiteCircle.draw()
@@ -263,6 +303,7 @@ for trial in training:
     # AQUI TENDRIA QUE IR EL CODIGO PARA EL JOYSTICK
     
     
+    
     lim = 0
     finbucle = 0
 
@@ -279,9 +320,9 @@ for trial in training:
     while finbucle == 0:
         xx = joy.getX()
         yy = joy.getY()
-        [left,right] = downRedButton.pos
+        [left,right] = downOrangeButton.pos
         
-        acel = 0.5 #aceleracion que se aplica a cada recogida de datos
+        acel = 0.4 #aceleracion que se aplica a cada recogida de datos
         nuevoX = left + acel* xx  # si avanzamos a la derecha, se incrementa el vector direccion X
         nuevoY = right - acel* yy # el eje Y esta invertido en los joystick, si vamos hacia arriba, se decrementa el vector direccion Y
         
@@ -298,10 +339,10 @@ for trial in training:
         ## fin comprobar limites 
 
 
-        downRedButton.setPos((nuevoX, nuevoY))
+        downOrangeButton.setPos((nuevoX, nuevoY))
 
         
-        distancia = distance.euclidean(downRedButton.pos,targetGreenCircle.pos)
+        distancia = distance.euclidean(downOrangeButton.pos,targetGreyCircle.pos)
         
         
         if distancia < 2 :   # mientras estamos teniendo contacto con los dos circulos
@@ -317,17 +358,18 @@ for trial in training:
             core.quit()
         
         # si no pasa nada de eso
-        
+            #Pintamos la solar cell para el target (aprox 0.25V)
+        solar_celltarget.draw()
         leftWhiteCircle.draw()
         rightWhiteCircle.draw()
-        targetGreenCircle.draw() #aqui el orden importa y primero imprimimos los dos circulos blancos, y luego el objetivo
-        downRedButton.draw()
-        solar_cellFixation.draw()
+        targetGreyCircle.draw() #aqui el orden importa y primero imprimimos los dos circulos blancos, y luego el objetivo
+        downOrangeButton.draw()
+        #solar_cellFixation.draw()
         event.clearEvents()
         mywin.flip()
         
         
-    downRedButton.setPos((0, -5))
+    downOrangeButton.setPos((0, -5))
     # guardamos el tiempo en pulsar esa tecla, que como hemos reseteado anteriormente el reloj, es el tiempo de respuesta del sujeto, en segundos
     imperativeTarget2 = respClock.getTime()
     
