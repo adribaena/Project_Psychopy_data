@@ -157,7 +157,7 @@ for trial in training:
     
     while timeWait > 0 :
         miu3.writeRegister(DAC1_REGISTER, ttlNumber)
-        timeWait = timeWait
+        timeWait = timeWait - 1
     # vamos escribiendo el voltaje en el puerto dac1
     
     miu3.writeRegister(DAC1_REGISTER, 0)
