@@ -14,6 +14,10 @@ from labjack import u3
 tiempoEsperaU3Cue = 0.2
 
 
+# opacidades de solar_cell100_reg , solar_cell75_reg , solar_cell50_reg , solar_cell100_nreg , solar_cell75_nreg y solar_cell50_nreg
+
+opacidades = [0.9, 0.8 , 0.7 , 0.6 , 0.5, 0.4]
+
 # la celula solar se muestra solo 0.30 segundos
 timeInSecondsOfCueShown = 0.3
 
@@ -92,13 +96,23 @@ else:
 
 solar_cellcue = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
 solar_celltarget = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
-solar_cell100 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
-solar_cell75 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
-solar_cell50 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
+
+
+solar_cell100_reg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[0], pos=[-14,7.5], interpolate= True)
+solar_cell100_nreg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[3], pos=[-14,7.5], interpolate= True)
+
+solar_cell75_reg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[1], pos=[-14,7.5], interpolate= True)
+solar_cell75_nreg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[4], pos=[-14,7.5], interpolate= True)
+
+solar_cell50_reg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[2], pos=[-14,7.5], interpolate= True)
+solar_cell50_nreg = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = opacidades[5], pos=[-14,7.5], interpolate= True)
 
 #preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
 solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
 black_solarCell = visual.Circle(mywin, radius= 0.6, edges=30, lineColor = 'black',fillColor = 'black', pos=[-14,7.5], interpolate= True) 
+
+
+
 
 
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
@@ -153,6 +167,14 @@ exp = data.ExperimentHandler(name='PosnerSubject',
 numeroReps = int(float(info['numberTrials']))
 training = data.TrialHandler(trialList=[], nReps=numeroReps, name='train', method='sequential')
 
+
+
+
+
+celulasCUe = [solar_cell100_reg ,solar_cell100_nreg , solar_cell75_reg , solar_cell75_nreg , solar_cell50_reg , solar_cell50_nreg]
+
+listaCues = [0.15,0.35,0.20,0.40,0.25,0.45]
+
 #unimos con nuestro experimento los trials, de manera secuencial (definido arriba en el method), en forma de bucle
 exp.addLoop(training)
 
@@ -202,8 +224,6 @@ for trial in training:
     
     #preguntamos por si queremos una celula de 100 por 100 de acierto, que se encuentra en nuestra variable elem, en el primer parametro 
     if (elem[0] == '100') :
-        #dibujamos la celula de 100 por 100 
-        itemSolar = solar_cell100
         #ademas, si el segundo elemento de elem (posicion 1 de elem, ya que la 0 representaba el procentaje de acierto) es 180
         if (elem[1] == '180'):
             # si lo es, giramos la flecha (cuadrado y triangulo del elemento del color que nos interesa) un total de 180 grados para darle la vuelta
@@ -214,14 +234,12 @@ for trial in training:
         triangleItem = triangle100
     #hacemos lo mismo para 75 y 50 por ciento
     elif (elem[0] == '75') :
-        itemSolar = solar_cell75
         if (elem[1] == '180'):
             square75.ori = int(float('180'))
             triangle75.ori = int(float('180'))
         squareItem = square75
         triangleItem = triangle75
     elif (elem[0] == '50'):
-        itemSolar = solar_cell50
         if (elem[1] == '180'):
             square50.ori = int(float('180'))
             triangle50.ori = int(float('180'))
@@ -234,14 +252,18 @@ for trial in training:
     
     ttlNumber = float(ttlText.strip('"'))
     
+    cueMejor = listaCues.index(ttlNumber)
+    
+    miCue = celulasCue[cueMejor]
+    
     respClock = core.Clock()
     
     while respClock.getTime() < cuetime:
-        itemSolar.draw()
+        miCue.draw()
         squareItem.draw()
         triangleItem.draw()
         #timeInSecondsOfCueShown es el tiempo de espera hasta ocultar el solarCell
-        if respClock.getTime() > timeInSecondsOfCueShown:     
+        if respClock.getTime() > timeInSecondsOfCueShown:
             black_solarCell.draw()
         if respClock.getTime() < tiempoEsperaU3Cue :
             miu3.writeRegister(DAC1_REGISTER, ttlNumber)
