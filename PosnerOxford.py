@@ -7,14 +7,37 @@ from labjack import u3
 
 
 
+
+
+
+# el tiempo en segundos durante el que se escribe un valor en DAC1_REGISTER durante el cue 
+tiempoEsperaU3Cue = 0.2
+
+
+# la celula solar se muestra solo 0.30 segundos
+timeInSecondsOfCueShown = 0.3
+
+
+# la aceleración que se usa más abajo para mover el Joystick
+
+acel = 0.8
+
+
+# otros valores de otros screens
+cuetime = 1.5
+imperativeTarget1 = 0.5
+interstimulusInterval = 4.0
+
+
+
+
+
+
 miu3 = u3.U3()
 miu3.getCalibrationData
 
 DAC1_REGISTER = 5002
 miu3.writeRegister(DAC1_REGISTER,0)
-
-tiempoEsperaU3Cue = 50
-
 
 
 #Allows to display messsages in the output when a file is saved
@@ -47,7 +70,7 @@ info['dateStr'] = data.getDateStr()
 #We create a screen on which our program will run
 #We also set up the internal clock meanwhile the remaining functions are ready to use
 
-mywin = visual.Window([1366,768], fullscr = True, monitor='testMonitor', color='black',units='deg', allowGUI = False)
+mywin = visual.Window([1366,768], fullscr = False, monitor='testMonitor', color='black',units='deg', allowGUI = False)
 respClock = core.Clock()
 
 
@@ -68,10 +91,15 @@ else:
 # We declare the 2 types of stimuli to be detected with the solar panels declaramos las 2 formas para las celulas solares, de mas claro a mas oscuro
 
 solar_cellcue = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
-solar_celltarget = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 0.5, pos=[-14,7.5], interpolate= True)
+solar_celltarget = visual.Circle(mywin, radius=0.5, edges=30, lineColor = 'white',fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
+solar_cell100 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
+solar_cell75 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
+solar_cell50 = visual.Circle(mywin, radius=0.5, edges=30, fillColor = 'white', opacity = 1, pos=[-14,7.5], interpolate= True)
 
 #preparamos la celula del punto de fijacion, de color blanco, y la cruz del punto de fijacion
-#solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
+solar_cellFixation = visual.Circle(mywin, radius= 0.5, edges=30, lineColor = 'white',fillColor = 'white', pos=[-14,7.5], interpolate= True) 
+black_solarCell = visual.Circle(mywin, radius= 0.6, edges=30, lineColor = 'black',fillColor = 'black', pos=[-14,7.5], interpolate= True) 
+
 
 fixationCross = visual.ImageStim(mywin, size = 0.9, image = None, mask = 'cross',color = 'white')
 
@@ -144,27 +172,6 @@ for trial in training:
     
     
     
-    
-    
-    
-    ttlText = elem[2]
-    
-    ttlNumber = float(ttlText.strip('"'))
-    
-    #obtenemos el voltaje a mandar
-        
-    timeWait = tiempoEsperaU3Cue
-    
-    while timeWait > 0 :
-        miu3.writeRegister(DAC1_REGISTER, ttlNumber)
-        timeWait = timeWait - 1
-    # vamos escribiendo el voltaje en el puerto dac1
-    
-    miu3.writeRegister(DAC1_REGISTER, 0)
-    
-    #escribimos en el mismo puerto un 0
-    
-    
     #declaramos el SOA, un intervalo de tiempo entre 1 y 2 segundos que usaremos para la pantalla de fixation
     timeFixation = random.uniform(1,2)
     
@@ -172,58 +179,81 @@ for trial in training:
     soa=round(timeFixation,1)
     training.addData('soa',soa)
     
-    #dibujamos la cruz de fijacion, y la celula solar de fijacion
-    fixationCross.draw()
-    #solar_cellFixation.draw()
-    fixationCross.draw()
-    #hacemos que se recargue la pantalla mywin, con los elementos dibujados antes (se refresca la pantalla con esos elementos)
-    mywin.flip()
     
-    #esperamos para cerrar esa ventan un tiempo igual al SOA ( 1- 2 segs)
-    core.wait(soa)
-    
-    #Pintamos las solar cell para la cue (aprox 0.5V)
-    solar_cellcue.draw()
+    respClock = core.Clock()
     
 
-
+    
+    # soa esta entre 1 y 2
+    
+    while respClock.getTime() < soa:
+        
+        fixationCross.draw()
+        solar_cellFixation.draw()
+        fixationCross.draw()
+        #timeInSecondsOfCueShown es el tiempo de espera hasta ocultar el solarCell
+        if respClock.getTime() > timeInSecondsOfCueShown:     
+            black_solarCell.draw()
+        mywin.flip()
+    
+    
+    
+    
     
     #preguntamos por si queremos una celula de 100 por 100 de acierto, que se encuentra en nuestra variable elem, en el primer parametro 
     if (elem[0] == '100') :
         #dibujamos la celula de 100 por 100 
-        #solar_cell100.draw()
+        itemSolar = solar_cell100
         #ademas, si el segundo elemento de elem (posicion 1 de elem, ya que la 0 representaba el procentaje de acierto) es 180
         if (elem[1] == '180'):
             # si lo es, giramos la flecha (cuadrado y triangulo del elemento del color que nos interesa) un total de 180 grados para darle la vuelta
             square100.ori = int(float('180'))
             triangle100.ori = int(float('180'))
         # hay que fijarse en los saltos de linea de arriba, es decir, giremos o no la figura, vamos a pintarla igualmente en nuestra ventana
-        square100.draw()
-        triangle100.draw()
+        squareItem = square100
+        triangleItem = triangle100
     #hacemos lo mismo para 75 y 50 por ciento
     elif (elem[0] == '75') :
-        #solar_cell75.draw()
+        itemSolar = solar_cell75
         if (elem[1] == '180'):
             square75.ori = int(float('180'))
             triangle75.ori = int(float('180'))
-        square75.draw()
-        triangle75.draw()
+        squareItem = square75
+        triangleItem = triangle75
     elif (elem[0] == '50'):
-        #solar_cell50.draw()
+        itemSolar = solar_cell50
         if (elem[1] == '180'):
             square50.ori = int(float('180'))
             triangle50.ori = int(float('180'))
-        square50.draw()
-        triangle50.draw()
+        squareItem = square50
+        triangleItem = triangle50
     
-    #una vez dibujados los elementos, actualizamos la pantalla
-    mywin.flip()
     
-    #declaramos y usamos una variable igual al tiempo de espera de esta ventana de CUE
-    cueTime = 1.5
     
-    core.wait(cueTime)
-    training.addData('cueTime',cueTime)
+    ttlText = elem[2]
+    
+    ttlNumber = float(ttlText.strip('"'))
+    
+    respClock = core.Clock()
+    
+    while respClock.getTime() < cuetime:
+        itemSolar.draw()
+        squareItem.draw()
+        triangleItem.draw()
+        #timeInSecondsOfCueShown es el tiempo de espera hasta ocultar el solarCell
+        if respClock.getTime() > timeInSecondsOfCueShown:     
+            black_solarCell.draw()
+        if respClock.getTime() < tiempoEsperaU3Cue :
+            miu3.writeRegister(DAC1_REGISTER, ttlNumber)
+        else :
+            miu3.writeRegister(DAC1_REGISTER, 0)
+        mywin.flip()
+    
+    
+    
+    
+    
+    training.addData('cueTime',cuetime)
     
     # una vez que ha pasado el tiempo de cue, reseteamos la posicion de las cue, y lo hacemos poniendo la inclinacion de todas a 0 grados
     # asi nos aseguramos que para el siguiente trial, todas las flechas estan orientadas como inicio a la derecha
@@ -235,18 +265,29 @@ for trial in training:
     triangle75.ori = 0
     
     
-    # ahora dibujamos el imperative target 1, es decir, el circulo rojo inferior, y los dos blancos superiores, al igual que una celula solar de un solo tipo
+    # ahora dibujamos el imperative target 1, es decir, el circulo rojo inferior, y los dos blancos superiores, al igual que una celula f de un solo tipo
     # vamos a reutilizar la de la celula solar del punto de fijacion
     #solar_cellFixation.draw()
 
-    leftWhiteCircle.draw()
-    rightWhiteCircle.draw()
-    downOrangeButton.draw()
-    mywin.flip()
+
+
+    respClock = core.Clock()
     
+    # soa esta entre 1 y 2
+    
+    while respClock.getTime() < imperativeTarget1:
+        
+        leftWhiteCircle.draw()
+        rightWhiteCircle.draw()
+        downOrangeButton.draw()
+        solar_cellFixation.draw()
+        #timeInSecondsOfCueShown es el tiempo de espera hasta ocultar el solarCell
+        if respClock.getTime() > timeInSecondsOfCueShown:
+            black_solarCell.draw()
+        mywin.flip()
+
     # como nuestro target dura un total de medio segundo, declaramos la variable, y la usamos como espera, para luego guardar ese valor en nuestro fichero de salida
-    imperativeTarget1 = 0.5
-    core.wait(imperativeTarget1)
+    
     training.addData('imperativeTarget1', imperativeTarget1)
     
     # vamos a obtener el porcentaje de acierto del cue, que es el primer elemento de elem
@@ -260,7 +301,7 @@ for trial in training:
     direccion = elem[1]
     
     # vamos a ir actualizando el reloj interno cada vez que hagamos un flip (cargar la pantalla) de nuestra ventana. Vamos a resetear el reloj interno cada vez.
-    mywin.callOnFlip(respClock.reset)
+    #mywin.callOnFlip(respClock.reset)
     
     # si la flecha ha acertado, y marcaba la direccion de la derecha con 0 grados
     # o si la flecha a mentido, y marcaba la direccion de la izquierda con 180 grados
@@ -270,7 +311,7 @@ for trial in training:
         targetGreyCircle.pos = ( 6,3)
         
         #aprovechamos y dejamos dibujado el circulo blanco a la izquierda
-        leftWhiteCircle.draw()
+        #leftWhiteCircle.draw()
         
         # declaramos un valor corrAns, que indica que el circulo target es a la derecha, con un 2
         corrAns = 2
@@ -278,7 +319,7 @@ for trial in training:
         targetGreyCircle.pos = (-6,3)
         
         #dejamos dibujado el ciruclo a la derecha
-        rightWhiteCircle.draw()
+        #rightWhiteCircle.draw()
         
         # en caso contrario, se pinta a la izquierda y corrAns vale 1
         corrAns = 1
@@ -297,7 +338,7 @@ for trial in training:
     
     
     #reseteamos la variable del reloj interno para poder guardar lo que se tarde en pulsar la tecla target
-    respClock.reset
+    respClock = core.Clock()
     
     
     # AQUI TENDRIA QUE IR EL CODIGO PARA EL JOYSTICK
@@ -313,16 +354,19 @@ for trial in training:
     limVert = 8
     
     # fin declarar limites
-
-
-
-
+    
+    solar_celltarget.draw()
+    leftWhiteCircle.draw()
+    rightWhiteCircle.draw()
+    targetGreyCircle.draw()
+    
+    respClock = core.Clock()
+    
     while finbucle == 0:
         xx = joy.getX()
         yy = joy.getY()
         [left,right] = downOrangeButton.pos
         
-        acel = 0.4 #aceleracion que se aplica a cada recogida de datos
         nuevoX = left + acel* xx  # si avanzamos a la derecha, se incrementa el vector direccion X
         nuevoY = right - acel* yy # el eje Y esta invertido en los joystick, si vamos hacia arriba, se decrementa el vector direccion Y
         
@@ -345,27 +389,26 @@ for trial in training:
         distancia = distance.euclidean(downOrangeButton.pos,targetGreyCircle.pos)
         
         
-        if distancia < 2 :   # mientras estamos teniendo contacto con los dos circulos
+        if distancia < 0.3 :   # mientras estamos teniendo contacto con los dos circulos
             
             lim = lim+1
-        if distancia > 2 : #si dejan de estar en contacto los circulos, reseteamos el limite
+        if distancia > 0.3 : #si dejan de estar en contacto los circulos, reseteamos el limite
             lim = 0
             
         if lim > 50:   # criterio de parada temporal (50 es un ejemplo, serian 50 veces el bucle seguidas) 
             finbucle = 1  # salimos del while
             
-        if 'q' in event.getKeys():   # abortar operacion si pulsamos el dulce q
+        if 'q' in event.getKeys():   # abortar operacion si pulsamos q
             core.quit()
-        
-        # si no pasa nada de eso
-            #Pintamos la solar cell para el target (aprox 0.25V)
+            
         solar_celltarget.draw()
         leftWhiteCircle.draw()
         rightWhiteCircle.draw()
-        targetGreyCircle.draw() #aqui el orden importa y primero imprimimos los dos circulos blancos, y luego el objetivo
+        targetGreyCircle.draw()
         downOrangeButton.draw()
-        #solar_cellFixation.draw()
-        event.clearEvents()
+        
+        if respClock.getTime() > timeInSecondsOfCueShown:
+            black_solarCell.draw()
         mywin.flip()
         
         
@@ -381,7 +424,6 @@ for trial in training:
     mywin.flip()
     
     # declaramos el tiempo de interstimulo antes de pasar al siguiente trial
-    interstimulusInterval = 4.0
     training.addData('interstimulusInterval',interstimulusInterval)
     
     # esperamos ese tiempo interstimulus y pasamos al siguiente trial
